@@ -157,10 +157,10 @@ void ObstacleLayer::onInitialize()
     if (data_type == "LaserScan")
     {
       boost::shared_ptr < message_filters::Subscriber<sensor_msgs::LaserScan>
-          > sub(new message_filters::Subscriber<sensor_msgs::LaserScan>(g_nh, topic, 50));
+          > sub(new message_filters::Subscriber<sensor_msgs::LaserScan>(g_nh, topic, 1));
 
       boost::shared_ptr < tf::MessageFilter<sensor_msgs::LaserScan>
-          > filter(new tf::MessageFilter<sensor_msgs::LaserScan>(*sub, *tf_, global_frame_, 50));
+          > filter(new tf::MessageFilter<sensor_msgs::LaserScan>(*sub, *tf_, global_frame_, 1));
 
       if (inf_is_valid)
       {
