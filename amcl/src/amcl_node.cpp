@@ -529,6 +529,12 @@ void AmclNode::reconfigureCB(AMCLConfig &config, uint32_t level)
     return;
   }
 
+  if(config.minimal_changes) {
+    d_thresh_ = config.update_min_d;
+    a_thresh_ = config.update_min_a;
+    return;
+  }
+
   if(config.restore_defaults) {
     config = default_config_;
     //avoid looping
