@@ -1,0 +1,2 @@
+geometry_msgs/PoseArray positions
+std_msgs/Float32MultiArray weights

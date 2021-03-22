@@ -52,6 +52,10 @@
 #include "nav_msgs/GetMap.h"
 #include "nav_msgs/SetMap.h"
 #include "std_srvs/Empty.h"
+#include "std_msgs/Float32MultiArray.h"
+
+// Custom msg
+#include "amcl/WeightedParticleCloud.h"
 
 // For transform support
 #include "tf2/LinearMath/Transform.h"
@@ -249,7 +253,8 @@ class AmclNode
     ros::NodeHandle nh_;
     ros::NodeHandle private_nh_;
     ros::Publisher pose_pub_;
-    ros::Publisher particlecloud_pub_;
+    // ros::Publisher particlecloud_pub_;
+    ros::Publisher particles_pub_;
     ros::ServiceServer global_loc_srv_;
     ros::ServiceServer nomotion_update_srv_; //to let amcl update samples without requiring motion
     ros::ServiceServer set_map_srv_;
@@ -471,7 +476,8 @@ AmclNode::AmclNode() :
   tfl_.reset(new tf2_ros::TransformListener(*tf_));
 
   pose_pub_ = nh_.advertise<geometry_msgs::PoseWithCovarianceStamped>("amcl_pose", 2, true);
-  particlecloud_pub_ = nh_.advertise<geometry_msgs::PoseArray>("particlecloud", 2, true);
+  // particlecloud_pub_ = nh_.advertise<geometry_msgs::PoseArray>("particlecloud", 2, true);
+  particles_pub_ = nh_.advertise<amcl::WeightedParticleCloud>("particles", 2, true);
   global_loc_srv_ = nh_.advertiseService("global_localization", 
 					 &AmclNode::globalLocalizationCallback,
                                          this);
@@ -1324,14 +1330,19 @@ AmclNode::laserReceived(const sensor_msgs::LaserScanConstPtr& laser_scan)
     pf_sample_set_t* set = pf_->sets + pf_->current_set;
     ROS_DEBUG("Num samples: %d\n", set->sample_count);
 
-    // Publish the resulting cloud
+    // Publish the resulting cloud and its corresponding weights
     // TODO: set maximum rate for publishing
     if (!m_force_update)
     {
+      amcl::WeightedParticleCloud particles_msg;
+      // Particles' position
       geometry_msgs::PoseArray cloud_msg;
       cloud_msg.header.stamp = ros::Time::now();
       cloud_msg.header.frame_id = global_frame_id_;
       cloud_msg.poses.resize(set->sample_count);
+      // Particles' weight
+      std_msgs::Float32MultiArray weight_msg;
+
       for(int i=0;i<set->sample_count;i++)
       {
         cloud_msg.poses[i].position.x = set->samples[i].pose.v[0];
@@ -1340,8 +1351,12 @@ AmclNode::laserReceived(const sensor_msgs::LaserScanConstPtr& laser_scan)
         tf2::Quaternion q;
         q.setRPY(0, 0, set->samples[i].pose.v[2]);
         tf2::convert(q, cloud_msg.poses[i].orientation);
+        weight_msg.data.push_back(set->samples[i].weight);
       }
-      particlecloud_pub_.publish(cloud_msg);
+      particles_msg.positions = cloud_msg;
+      particles_msg.weights = weight_msg;
+      // particlecloud_pub_.publish(cloud_msg);
+      particles_pub_.publish(particles_msg);
     }
   }
 

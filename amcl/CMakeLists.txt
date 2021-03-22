@@ -19,6 +19,8 @@ find_package(catkin REQUIRED
     roscpp
     sensor_msgs
     std_srvs
+    std_msgs
+    message_generation
     tf2
     tf2_geometry_msgs
     tf2_msgs
@@ -30,6 +32,18 @@ find_package(Boost REQUIRED)
 # dynamic reconfigure
 generate_dynamic_reconfigure_options(
     cfg/AMCL.cfg
+)
+
+# custom msg
+add_message_files(
+  FILES
+  WeightedParticleCloud.msg
+)
+
+generate_messages(
+  DEPENDENCIES
+  std_msgs
+  geometry_msgs
 )
 
 catkin_package(
